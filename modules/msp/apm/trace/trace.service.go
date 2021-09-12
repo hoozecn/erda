@@ -49,6 +49,10 @@ type traceService struct {
 	traceRequestHistoryDB *db.TraceRequestHistoryDB
 }
 
+func (s *traceService) GetSpanDashboards(ctx context.Context, request *pb.GetSpanDashboardsRequest) (*pb.GetSpanDashboardsResponse, error) {
+	return nil, errors.NewUnimplementedError("TraceService.GetSpanDashboards")
+}
+
 func (s *traceService) getDebugStatus(lang i18n.LanguageCodes, statusCode debug.Status) string {
 	if lang == nil {
 		return ""
