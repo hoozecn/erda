@@ -442,6 +442,8 @@ func (m *Runtime) UnmarshalURLValues(prefix string, values url.Values) error {
 				m.OrgID = val
 			case "reserved":
 				m.Reserved = vals[0]
+			case "reserved1":
+				m.Reserved1 = vals[0]
 			}
 		}
 	}
