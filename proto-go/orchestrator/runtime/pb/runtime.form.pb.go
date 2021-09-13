@@ -440,6 +440,8 @@ func (m *Runtime) UnmarshalURLValues(prefix string, values url.Values) error {
 					return err
 				}
 				m.OrgID = val
+			case "reserved":
+				m.Reserved = vals[0]
 			}
 		}
 	}
