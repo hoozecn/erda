@@ -26,6 +26,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -90,10 +91,19 @@ func testAllPackages(base string) error {
 			return err
 		}
 		if info.IsDir() {
-			// Skip directories like ".git".
-			if name := info.Name(); name != "." && strings.HasPrefix(name, ".") {
-				return filepath.SkipDir
+
+			if name := info.Name(); name != "." {
+				// Skip directories like ".git".
+				if strings.HasPrefix(name, ".") {
+					return filepath.SkipDir
+				}
+
+				// Skip directories wasn't included in the base package, i.e. proto-go
+				if module, err := readBasePathFromDir(filepath.Join(path, info.Name())); err == nil && strings.HasPrefix(module, base) {
+					return filepath.SkipDir
+				}
 			}
+
 			// parse package
 			pkgs, err := parser.ParseDir(fset, path, nil, parser.ImportsOnly)
 			if err != nil {
@@ -316,7 +326,11 @@ func writeTestSum(testSum map[string]*testSumItem) error {
 }
 
 func readBasePath() (string, error) {
-	mod, err := ioutil.ReadFile("go.mod")
+	return readBasePathFromDir(".")
+}
+
+func readBasePathFromDir(dir string) (string, error) {
+	mod, err := ioutil.ReadFile(path.Join(dir, "go.mod"))
 	if err != nil {
 		return "", err
 	}
@@ -352,7 +366,8 @@ func runTest(file string) (profiles []*cover.Profile, err error) {
 			os.Remove(coverage)
 		}()
 	}
-	args := append([]string{"test", "-tags=musl", "-work", "-cpu=2", "-timeout=30s", "-failfast", "-race", "-coverprofile=" + coverage, "-covermode=atomic"})
+	// fix panic by conflict proto file name https://developers.google.com/protocol-buffers/docs/reference/go/faq#namespace-conflict
+	args := append([]string{"test", "-ldflags", "-X google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn", "-tags=musl", "-work", "-cpu=2", "-timeout=30s", "-failfast", "-race", "-coverprofile=" + coverage, "-covermode=atomic"})
 	args = append(args, file)
 	fmt.Printf("exec: go %s\n", strings.Join(args, " "))
 	cmd := exec.Command("go", args...)
